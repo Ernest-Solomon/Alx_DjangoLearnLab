@@ -1,16 +1,16 @@
-from relationship_app.models import Author, Book, Library, Librarian
+from .models import Author, Book, Library, Librarian
 
 # Query all books by a specific author
 def books_by_author(author_name):
     author = Author.objects.get(name=author_name)
-    return author.books.all()
+    return Book.objects.filter(author=author)  # <- use filter
 
 # List all books in a library
 def books_in_library(library_name):
     library = Library.objects.get(name=library_name)
-    return library.books.all()
+    return library.books.all()  # ManyToManyField, all() is fine
 
 # Retrieve the librarian for a library
 def librarian_for_library(library_name):
     library = Library.objects.get(name=library_name)
-    return library.librarian
+    return library.librarian  # OneToOneField, same as before
