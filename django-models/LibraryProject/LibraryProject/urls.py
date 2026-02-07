@@ -7,8 +7,8 @@ urlpatterns = [
     path('library/<int:pk>/', views.LibraryDetailView.as_view(), name='library_detail'),
 
     # Authentication
-    path('login/', views.LoginView.as_view(template_name='relationship_app/login.html'), name='login'),
-    path('logout/', views.LogoutView.as_view(template_name='relationship_app/logout.html'), name='logout'),
+    path('login/', views.UserLoginView.as_view(), name='login'),
+    path('logout/', views.UserLogoutView.as_view(), name='logout'),
     path('register/', views.register, name='register'),
 
     # Role-based views
