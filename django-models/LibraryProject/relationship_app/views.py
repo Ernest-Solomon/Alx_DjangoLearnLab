@@ -1,13 +1,21 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import (
+    permission_required,
+    user_passes_test
+)
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic.detail import DetailView
 
-from .models import Book, Library
+from .models import Book, Library, Author
 
 
-# Function-based view
+# ================================
+# BOOK & LIBRARY VIEWS
+# ================================
+
+# Function-based view: list all books
 def list_books(request):
     books = Book.objects.all()
     return render(
@@ -17,24 +25,25 @@ def list_books(request):
     )
 
 
-# Class-based view
+# Class-based view: library detail
 class LibraryDetailView(DetailView):
     model = Library
     template_name = 'relationship_app/library_detail.html'
     context_object_name = 'library'
 
 
-# Login view (built-in)
+# ================================
+# AUTHENTICATION VIEWS
+# ================================
+
 class UserLoginView(LoginView):
     template_name = 'relationship_app/login.html'
 
 
-# Logout view (built-in)
 class UserLogoutView(LogoutView):
     template_name = 'relationship_app/logout.html'
 
 
-# Registration view
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -52,9 +61,9 @@ def register(request):
     )
 
 
-from django.contrib.auth.decorators import user_passes_test
-from django.http import HttpResponse
-
+# ================================
+# ROLE-BASED ACCESS CONTROL
+# ================================
 
 def is_admin(user):
     return user.userprofile.role == 'Admin'
@@ -83,7 +92,62 @@ def member_view(request):
     return render(request, 'relationship_app/member_view.html')
 
 
+# ================================
+# BOOK PERMISSION-BASED VIEWS
+# ================================
+
+@permission_required('relationship_app.can_add_book', raise_exception=True)
+def add_book(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        author_id = request.POST.get("author")
+
+        author = Author.objects.get(id=author_id)
+        Book.objects.create(title=title, author=author)
+
+        return redirect('list_books')
+
+    authors = Author.objects.all()
+    return render(
+        request,
+        'relationship_app/add_book.html',
+        {'authors': authors}
+    )
 
 
+@permission_required('relationship_app.can_change_book', raise_exception=True)
+def edit_book(request, pk):
+    book = Book.objects.get(pk=pk)
+
+    if request.method == "POST":
+        book.title = request.POST.get("title")
+        author_id = request.POST.get("author")
+        book.author = Author.objects.get(id=author_id)
+        book.save()
+
+        return redirect('list_books')
+
+    authors = Author.objects.all()
+    return render(
+        request,
+        'relationship_app/edit_book.html',
+        {
+            'book': book,
+            'authors': authors
+        }
+    )
 
 
+@permission_required('relationship_app.can_delete_book', raise_exception=True)
+def delete_book(request, pk):
+    book = Book.objects.get(pk=pk)
+
+    if request.method == "POST":
+        book.delete()
+        return redirect('list_books')
+
+    return render(
+        request,
+        'relationship_app/delete_book.html',
+        {'book': book}
+    )
